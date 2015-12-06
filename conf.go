@@ -18,14 +18,18 @@ type Rcpt struct {
 }
 
 type configFile struct {
-	Debug bool `toml:"debug"`
+	Debug    bool   `toml:"debug"`
+	Endpoint string `toml:"endpoint"`
 
-	Sendgrid struct {
-		User     string `toml:"user"`
-		Password string `toml:"password"`
-		Subject  string `toml:"subject"`
-		From     string `toml:"from"`
-	} `toml:"sendgrid"`
+	SMTP struct {
+		Hostname     string `toml:"hostname"`
+		Port         int    `toml:"port"`
+		User         string `toml:"user"`
+		Password     string `toml:"password"`
+		Subject      string `toml:"subject"`
+		From         string `toml:"from"`
+		SkipTLSCheck bool   `toml:"skip_tls_check"`
+	} `toml:"smtp"`
 
 	Rcpts []Rcpt `toml:"rcpt"`
 

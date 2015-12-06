@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -10,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sendgrid/sendgrid-go"
+	"gopkg.in/gomail.v2"
 )
 
 func checkSite(config *configFile, site Site) {
@@ -18,7 +19,7 @@ func checkSite(config *configFile, site Site) {
 	if err != nil {
 		log.Println(err)
 		body := fmt.Sprintf("Monitoring alert for %s could not connect: %s", site.Url, err)
-		sendEmail(config, site, body)
+		sendEmail(config, body)
 		return
 	} else {
 		defer response.Body.Close()
@@ -28,7 +29,7 @@ func checkSite(config *configFile, site Site) {
 		// connectivity
 		if err != nil {
 			body := fmt.Sprintf("Monitoring alert for %s could not read: %s", site.Url, err)
-			sendEmail(config, site, body)
+			sendEmail(config, body)
 			return
 		}
 		// response time
@@ -36,7 +37,7 @@ func checkSite(config *configFile, site Site) {
 			secs := time.Since(start).Seconds()
 			if secs*1000.00 > site.Threshold {
 				body := fmt.Sprintf("Monitoring alert for %s time spent: %f threshold %f", site.Url, secs*1000, site.Threshold)
-				sendEmail(config, site, body)
+				sendEmail(config, body)
 
 			}
 		}
@@ -48,25 +49,35 @@ func checkSite(config *configFile, site Site) {
 		}
 	}
 	body := fmt.Sprintf("Monitoring alert for %s keyword %s not found", site.Url, site.Keyword)
-	sendEmail(config, site, body)
+	sendEmail(config, body)
 }
 
-func sendEmail(config *configFile, site Site, body string) {
-	sg := sendgrid.NewSendGridClient(config.Sendgrid.User, config.Sendgrid.Password)
-	message := sendgrid.NewMail()
-	for _, rcpt := range config.Rcpts {
-		message.AddTo(rcpt.Email)
-		message.AddToName(rcpt.Name)
+func sendEmail(config *configFile, body string) {
+	d := gomail.NewPlainDialer(config.SMTP.Hostname, config.SMTP.Port, config.SMTP.User, config.SMTP.Password)
+	if config.SMTP.SkipTLSCheck {
+		d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	}
-	message.SetSubject(config.Sendgrid.Subject)
-	message.SetText(body)
-	message.SetFrom(config.Sendgrid.From)
-	if r := sg.Send(message); r == nil {
-		fmt.Println("Email sent!")
-	} else {
-		fmt.Println(r)
+	s, err := d.Dial()
+	if err != nil {
+		log.Printf("Could not connect to smtp server %q port %d: %v", config.SMTP.Hostname, config.SMTP.Port, err)
+		return
+	}
+	if config.Endpoint != "" {
+		body = body + "\n\nEndpoint: " + config.Endpoint
 	}
 
+	m := gomail.NewMessage()
+	for _, rcpt := range config.Rcpts {
+		m.SetHeader("From", config.SMTP.From)
+		m.SetAddressHeader("To", rcpt.Email, rcpt.Name)
+		m.SetHeader("Subject", config.SMTP.Subject)
+		m.SetBody("text/plain", body)
+
+		if err := gomail.Send(s, m); err != nil {
+			log.Printf("Could not send email to %q: %v", rcpt.Email, err)
+		}
+		m.Reset()
+	}
 }
 
 func main() {

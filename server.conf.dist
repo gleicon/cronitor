@@ -1,0 +1,42 @@
+debug = false
+endpoint = "my DO vm"
+
+[smtp]
+user = "smtp username"
+password = "smtp password"
+subject = "Alert http monitoring"
+from = "your_email@domain.com"
+hostname = "smtp hostname"
+port = 587
+skip_tls_check = false # in case golang tls check complains at gmail and sendgrid.
+
+# all recipients you want mailed
+[[rcpt]]
+email = "gleicon@gmail.com"
+name = "Gleicon Moraes"
+
+[[rcpt]]
+email = "gleicon@gmail.com"
+name = "Gleicon Moraes"
+
+# you can check for availability, connectivity, keyword and time to transfer.
+
+[[site]]
+url = "https://www.google.com"
+threshold = 10.00
+
+[[site]]
+url = "https://www.google.com"
+keyword = "lucky"
+
+[[site]]
+url = "https://www.google.com"
+keyword = "cogunheco"
+threshold = 100.00
+
+[[site]]
+url = "http://leiras.net"
+keyword = "oferta"
+threshold = 100.00
+
+

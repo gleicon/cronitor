@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -20,6 +21,7 @@ func checkSite(config *configFile, site Site) {
 		log.Println(err)
 		body := fmt.Sprintf("Monitoring alert for %s could not connect: %s", site.Url, err)
 		sendEmail(config, body)
+		sendSlack(config, body)
 		return
 	} else {
 		defer response.Body.Close()
@@ -30,6 +32,7 @@ func checkSite(config *configFile, site Site) {
 		if err != nil {
 			body := fmt.Sprintf("Monitoring alert for %s could not read: %s", site.Url, err)
 			sendEmail(config, body)
+			sendSlack(config, body)
 			return
 		}
 		// response time
@@ -38,6 +41,7 @@ func checkSite(config *configFile, site Site) {
 			if secs*1000.00 > site.Threshold {
 				body := fmt.Sprintf("Monitoring alert for %s time spent: %f threshold %f", site.Url, secs*1000, site.Threshold)
 				sendEmail(config, body)
+				sendSlack(config, body)
 
 			}
 		}
@@ -50,6 +54,7 @@ func checkSite(config *configFile, site Site) {
 	}
 	body := fmt.Sprintf("Monitoring alert for %s keyword %s not found", site.Url, site.Keyword)
 	sendEmail(config, body)
+	sendSlack(config, body)
 }
 
 func sendEmail(config *configFile, body string) {
@@ -78,6 +83,31 @@ func sendEmail(config *configFile, body string) {
 		}
 		m.Reset()
 	}
+}
+
+func sendSlack(config *configFile, body string) {
+	if config.SLACK.URL == "" {
+		return
+	}
+	payload := fmt.Sprintf("{\"channel\": \"%s\", \"username\": \"%s\", \"text\": \"%s\", \"icon_emoji\": \"%s\"}", config.SLACK.Channel, config.SLACK.Username, body, config.SLACK.IconEmoji)
+
+	log.Println(payload)
+
+	req, err := http.NewRequest("POST", config.SLACK.URL, bytes.NewBuffer([]byte(payload)))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Could not connect to slack %q: %v", config.SLACK.Channel, err)
+	}
+	defer resp.Body.Close()
+	bb, _ := ioutil.ReadAll(resp.Body)
+	log.Println(string(bb))
+	if string(bb) != "ok" {
+		log.Printf("Could not send slack message to %q: %v", config.SLACK.Channel, err)
+	}
+
 }
 
 func main() {

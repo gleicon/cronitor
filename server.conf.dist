@@ -1,6 +1,12 @@
 debug = false
+
+# Endpoint is a footnote on your email in case you run
+# multiple servers monitoring the same target
 endpoint = "my DO vm"
 
+# SMTP connection. TEsted with sendgrid, gmail and local dovecot.
+# Some servers will raise a TLS error on certificate. Make sure that you are
+# not introducing any security risks by ignoring it.
 [smtp]
 user = "smtp username"
 password = "smtp password"
@@ -10,33 +16,48 @@ hostname = "smtp hostname"
 port = 587
 skip_tls_check = false # in case golang tls check complains at gmail and sendgrid.
 
-# all recipients you want mailed
+# slack chat notification
+# configure a webhook integration https://api.slack.com/incoming-webhooks
+[slack]
+url = "https://hooks.slack.com/services/<your webhook uri>"
+channel = "channel"
+username = "el_bot"
+icon_emoji = ":ghost:"
+
+# all recipients you want mailed for each alert
 [[rcpt]]
 email = "gleicon@gmail.com"
 name = "Gleicon Moraes"
 
 [[rcpt]]
-email = "gleicon@gmail.com"
-name = "Gleicon Moraes"
+email = "anothergleicon@gmail.com"
+name = "Gleicon Moraes work email"
 
-# you can check for availability, connectivity, keyword and time to transfer.
+# each [[site]] means a monitoring target.
+# you can check for availability, connectivity, keyword 
+# and transfer latency. This is equivalent to time curl http://your-site.com
+# the same target can be used for different checks
 
+# this checks if it is available and if the load time is unser 10ms
 [[site]]
 url = "https://www.google.com"
 threshold = 10.00
 
+# this checks if it is available and if the keyword "lucky" is there
 [[site]]
 url = "https://www.google.com"
 keyword = "lucky"
 
+# this checks if it is available, if the keyword "cogunheco" 
+# is there and if load time is over 100ms
 [[site]]
 url = "https://www.google.com"
 keyword = "cogunheco"
 threshold = 100.00
 
+# this one fails due to domain not found
 [[site]]
 url = "http://leiras.net"
 keyword = "oferta"
 threshold = 100.00
-
 

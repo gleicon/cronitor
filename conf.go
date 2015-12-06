@@ -31,6 +31,13 @@ type configFile struct {
 		SkipTLSCheck bool   `toml:"skip_tls_check"`
 	} `toml:"smtp"`
 
+	SLACK struct {
+		URL       string `toml:"url"`
+		Channel   string `toml:"channel"`
+		Username  string `toml:"username"`
+		IconEmoji string `toml:"icon_emoji"`
+	} `toml:"slack"`
+
 	Rcpts []Rcpt `toml:"rcpt"`
 
 	Sites []Site `toml:"site"`

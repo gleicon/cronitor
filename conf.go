@@ -38,6 +38,12 @@ type configFile struct {
 		IconEmoji string `toml:"icon_emoji"`
 	} `toml:"slack"`
 
+	KEEN struct {
+		APIKey         string `toml:"api_key"`
+		ProjectToken   string `toml:"project_token"`
+		CollectionName string `toml:"collection_name"`
+	} `toml:"keen"`
+
 	Rcpts []Rcpt `toml:"rcpt"`
 
 	Sites []Site `toml:"site"`

@@ -22,6 +22,7 @@ func checkSite(config *configFile, site Site) {
 		body := fmt.Sprintf("Monitoring alert for %s could not connect: %s", site.Url, err)
 		sendEmail(config, body)
 		sendSlack(config, body)
+		sendKeenMetrics(config, site.Url, "connect", 0.0, []string{"down"})
 		return
 	} else {
 		defer response.Body.Close()
@@ -33,21 +34,25 @@ func checkSite(config *configFile, site Site) {
 			body := fmt.Sprintf("Monitoring alert for %s could not read: %s", site.Url, err)
 			sendEmail(config, body)
 			sendSlack(config, body)
+			sendKeenMetrics(config, site.Url, "read", 0.0, []string{"down", "read error"})
 			return
 		}
 		// response time
+		secs := time.Since(start).Seconds()
+		lt := secs * 1000.00
 		if site.Threshold > 0 {
-			secs := time.Since(start).Seconds()
-			if secs*1000.00 > site.Threshold {
-				body := fmt.Sprintf("Monitoring alert for %s time spent: %f threshold %f", site.Url, secs*1000, site.Threshold)
+			if lt > site.Threshold {
+				body := fmt.Sprintf("Monitoring alert for %s time spent: %f threshold %f", site.Url, lt, site.Threshold)
 				sendEmail(config, body)
 				sendSlack(config, body)
+				sendKeenMetrics(config, site.Url, "latency", lt, []string{"slow"})
 
 			}
 		}
 		// keyword
 		if site.Keyword != "" {
 			if strings.Contains(string(contents), site.Keyword) {
+				sendKeenMetrics(config, site.Url, "check", lt, []string{"up"})
 				return
 			}
 		}
@@ -55,6 +60,7 @@ func checkSite(config *configFile, site Site) {
 	body := fmt.Sprintf("Monitoring alert for %s keyword %s not found", site.Url, site.Keyword)
 	sendEmail(config, body)
 	sendSlack(config, body)
+	sendKeenMetrics(config, site.Url, "keyword", 0.0, []string{"keyword not found"})
 }
 
 func sendEmail(config *configFile, body string) {

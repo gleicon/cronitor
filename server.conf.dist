@@ -24,6 +24,16 @@ channel = "channel"
 username = "el_bot"
 icon_emoji = ":ghost:"
 
+# keen.io metrics
+# Send your metrics to keen.io. Try a simple query on your event collection 
+# Target property: Loadtime | Group by: keen.timestamp. 
+# You can filter by endpoint in case you are running multiple cronitors in different locations
+
+[keen]
+api_key = ""
+project_token = ""
+collection_name = ""
+
 # all recipients you want mailed for each alert
 [[rcpt]]
 email = "gleicon@gmail.com"
